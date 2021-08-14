@@ -1,7 +1,8 @@
-package com.learn.trxisolation.service;
+package com.learn.trxisolation.service.impl;
 
 import com.learn.trxisolation.model.StudentModel;
 import com.learn.trxisolation.repository.StudentRepository;
+import com.learn.trxisolation.service.StudentService;
 import com.learn.trxisolation.util.Flag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

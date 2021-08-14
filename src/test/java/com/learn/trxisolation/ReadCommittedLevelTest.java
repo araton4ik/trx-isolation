@@ -2,7 +2,7 @@ package com.learn.trxisolation;
 
 import com.learn.trxisolation.model.StudentModel;
 import com.learn.trxisolation.repository.StudentRepository;
-import com.learn.trxisolation.service.IsolationService;
+import com.learn.trxisolation.service.ReadCommittedService;
 import com.learn.trxisolation.service.StudentService;
 import com.learn.trxisolation.util.Flag;
 import io.vavr.Tuple2;
@@ -29,7 +29,7 @@ class ReadCommittedLevelTest {
     private StudentService studentService;
 
     @Autowired
-    private IsolationService isolationService;
+    private ReadCommittedService isolationService;
 
 
     @BeforeEach
@@ -59,7 +59,7 @@ class ReadCommittedLevelTest {
             TimeUnit.MILLISECONDS.sleep(100);
         }
         // call method which also want to read the same row
-        String group = isolationService.readStudentGroupWithReadCommittedLevel(studentId);
+        String group = isolationService.checkDirtyRead(studentId);
         assertEquals(initialGroup, group, "Should be equal as method reads only committed data, when new value is not committed yet");
 
         // allow different transaction finish
@@ -83,7 +83,7 @@ class ReadCommittedLevelTest {
         while (flag.isFlagValue()) {
             TimeUnit.MILLISECONDS.sleep(100);
         }
-        long studentCount = isolationService.readStudentCountWhenRowAddedOrDeletedWithReadCommittedLevel();
+        long studentCount = isolationService.readStudentCountWhenRowAddedOrDeleted();
         // check that transaction didn't read new uncommitted row;
         assertEquals(initialCount, studentCount);
 
@@ -102,7 +102,7 @@ class ReadCommittedLevelTest {
         var isolationFlag = new Flag(true);
 
         // run method which should readPhantom
-        CompletableFuture<Tuple2<Long, Long>> phantomFuture = CompletableFuture.supplyAsync(() -> isolationService.checkPhantomReadWhenLevelIsReadCommitted(isolationFlag));
+        CompletableFuture<Tuple2<Long, Long>> phantomFuture = CompletableFuture.supplyAsync(() -> isolationService.checkPhantomRead(isolationFlag));
 
         // wait until method read number of students for the first time
         while (isolationFlag.isFlagValue()) {
@@ -132,7 +132,7 @@ class ReadCommittedLevelTest {
         var isolationFlag = new Flag(true);
 
         // run method which should read non-repeatable data
-        CompletableFuture<Tuple2<String, String>> nonRepeatableFuture = CompletableFuture.supplyAsync(() -> isolationService.checkNonRepeatableReadWhenLevelIsReadCommitted(studentId, isolationFlag));
+        CompletableFuture<Tuple2<String, String>> nonRepeatableFuture = CompletableFuture.supplyAsync(() -> isolationService.checkNonRepeatableRead(studentId, isolationFlag));
 
         // wait until method read student group for the first time
         while (isolationFlag.isFlagValue()) {

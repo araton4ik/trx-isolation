@@ -2,7 +2,7 @@ package com.learn.trxisolation;
 
 import com.learn.trxisolation.model.StudentModel;
 import com.learn.trxisolation.repository.StudentRepository;
-import com.learn.trxisolation.service.IsolationService;
+import com.learn.trxisolation.service.RepeatableReadService;
 import com.learn.trxisolation.service.StudentService;
 import com.learn.trxisolation.util.Flag;
 import io.vavr.Tuple2;
@@ -29,7 +29,7 @@ class RepeatableReadLevelTest {
     private StudentService studentService;
 
     @Autowired
-    private IsolationService isolationService;
+    private RepeatableReadService isolationService;
 
 
     @BeforeEach
@@ -51,7 +51,7 @@ class RepeatableReadLevelTest {
         var isolationFlag = new Flag(true);
 
         // run method which should readPhantom
-        CompletableFuture<Tuple2<Long, Long>> phantomFuture = CompletableFuture.supplyAsync(() -> isolationService.checkPhantomReadWhenLevelIsReadRepeatable(isolationFlag));
+        CompletableFuture<Tuple2<Long, Long>> phantomFuture = CompletableFuture.supplyAsync(() -> isolationService.checkPhantomRead(isolationFlag));
 
         // wait until method read number of students for the first time
         while (isolationFlag.isFlagValue()) {
@@ -80,7 +80,7 @@ class RepeatableReadLevelTest {
         var isolationFlag = new Flag(true);
 
         // run method which should not read non-repeatable data
-        CompletableFuture<Tuple2<String, String>> nonRepeatableFuture = CompletableFuture.supplyAsync(() -> isolationService.checkNonRepeatableReadWhenLevelIsReadRepeatable(studentId, isolationFlag));
+        CompletableFuture<Tuple2<String, String>> nonRepeatableFuture = CompletableFuture.supplyAsync(() -> isolationService.checkNonRepeatableRead(studentId, isolationFlag));
 
         // wait until method read student group
         while (isolationFlag.isFlagValue()) {

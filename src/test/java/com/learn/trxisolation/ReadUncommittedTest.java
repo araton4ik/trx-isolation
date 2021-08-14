@@ -2,7 +2,7 @@ package com.learn.trxisolation;
 
 import com.learn.trxisolation.model.StudentModel;
 import com.learn.trxisolation.repository.StudentRepository;
-import com.learn.trxisolation.service.IsolationService;
+import com.learn.trxisolation.service.ReadUncommittedService;
 import com.learn.trxisolation.service.StudentService;
 import com.learn.trxisolation.util.Flag;
 import org.junit.jupiter.api.AfterEach;
@@ -27,7 +27,7 @@ class ReadUncommittedTest {
     private StudentService studentService;
 
     @Autowired
-    private IsolationService isolationService;
+    private ReadUncommittedService isolationService;
 
     @BeforeEach
     void setupData() {
@@ -110,7 +110,7 @@ class ReadUncommittedTest {
         while (flag.isFlagValue()) {
             TimeUnit.MILLISECONDS.sleep(100);
         }
-        Long count = isolationService.readStudentCountWhenRowDeletedWithUncommittedLevel();
+        Long count = isolationService.readStudentCountWhenRowDeleted();
         // check that transaction read uncommitted value
         assertEquals(1, count, "should be 1 student");
 
