@@ -121,7 +121,7 @@ class ReadCommittedLevelTest {
     }
 
 
-    @Disabled("It should work, but for some reason doesn't")
+    //@Disabled("It should work, but for some reason doesn't")
     @Test
     void testThatNonRepeatableReadStillPossible() throws InterruptedException, ExecutionException {
         var student = studentRepository.findAll().iterator().next();

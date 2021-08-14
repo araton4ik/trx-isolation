@@ -51,12 +51,23 @@ public class ReadCommittedServiceImpl implements ReadCommittedService {
     @Override
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public Tuple2<String, String> checkNonRepeatableRead(Long id, Flag flag) {
-        String firstGroup = studentRepository.findById(id).map(StudentModel::getGroupName).orElse(null);
+        String firstGroup = studentRepository.findAll().stream()
+                .filter(st -> st.getId().equals(id))
+                .findFirst()
+                .map(StudentModel::getGroupName)
+                .orElse(null);
+
         flag.setFlagValue(false);
+
         while (!flag.isFlagValue()) {
             TimeUnit.MILLISECONDS.sleep(200);
         }
-        String secondGroup = studentRepository.findById(id).map(StudentModel::getGroupName).orElse(null);
+        // I use findAll because when we use findById, then Hibernate takes data from persistence context
+        String secondGroup = studentRepository.findAll().stream()
+                .filter(st -> st.getId().equals(id))
+                .findFirst()
+                .map(StudentModel::getGroupName)
+                .orElse(null);
 
         return Tuple.of(firstGroup, secondGroup);
     }
