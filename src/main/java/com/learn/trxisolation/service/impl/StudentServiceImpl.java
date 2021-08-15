@@ -37,7 +37,6 @@ public class StudentServiceImpl implements StudentService {
         var student = studentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Wrong id"));
         student.setGroupName(group);
-        studentRepository.save(student);
         flushAndWait(flag, throwException);
 
     }
@@ -48,7 +47,7 @@ public class StudentServiceImpl implements StudentService {
         log.info(FLAG_SET);
         try {
             while (!flag.isFlagValue()) {
-                TimeUnit.MILLISECONDS.sleep(500);
+                TimeUnit.MILLISECONDS.sleep(100);
                 log.info(WAIT);
             }
         } catch (InterruptedException e) {
