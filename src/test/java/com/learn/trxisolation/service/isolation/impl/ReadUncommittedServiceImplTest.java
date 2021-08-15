@@ -1,15 +1,11 @@
-package com.learn.trxisolation;
+package com.learn.trxisolation.service.isolation.impl;
 
+import com.learn.trxisolation.helper.DataPreparation;
 import com.learn.trxisolation.model.StudentModel;
-import com.learn.trxisolation.repository.StudentRepository;
-import com.learn.trxisolation.service.ReadUncommittedService;
-import com.learn.trxisolation.service.StudentService;
+import com.learn.trxisolation.service.isolation.ReadUncommittedService;
 import com.learn.trxisolation.util.Flag;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -17,31 +13,13 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-class ReadUncommittedTest {
-
-    @Autowired
-    private StudentRepository studentRepository;
-
-    @Autowired
-    private StudentService studentService;
+class ReadUncommittedServiceImplTest extends DataPreparation {
 
     @Autowired
     private ReadUncommittedService isolationService;
 
-    @BeforeEach
-    void setupData() {
-        studentRepository.save(new StudentModel(null, "Ivan", "Ivanov", "gr-1", 21));
-        studentRepository.save(new StudentModel(null, "Petr", "Petrov", "gr-2", 22));
-    }
-
-    @AfterEach
-    void clean() {
-        studentRepository.deleteAll();
-    }
-
     @Test
-    void testDirtyReadOfRowChange() throws ExecutionException, InterruptedException {
+    void checkDirtyRead() throws InterruptedException, ExecutionException {
         var newGroupName = "New Student Group";
         // initialise flag object
         var flag = new Flag(true);
@@ -53,9 +31,9 @@ class ReadUncommittedTest {
         CompletableFuture<Void> changeGroupFuture = CompletableFuture.runAsync(() -> studentService.changeGroup(studentId, newGroupName, flag, false));
         // wait until changes are flushed to db, but not committed yet
         while (flag.isFlagValue()) {
-            TimeUnit.MILLISECONDS.sleep(100);
+            TimeUnit.MILLISECONDS.sleep(50);
         }
-        String group = isolationService.readStudentGroupWithReadUncommittedLevel(studentId);
+        String group = isolationService.checkDirtyRead(studentId);
         assertAll(
                 () -> assertEquals(newGroupName, group, "Group should be equal as dirty read is possible"),
                 () -> assertNotEquals(newGroupName, initialGroup)
@@ -78,9 +56,9 @@ class ReadUncommittedTest {
         CompletableFuture<Void> changeGroupFuture = CompletableFuture.runAsync(() -> studentService.changeGroup(studentId, newGroupName, flag, true));
         // wait until changes are flushed to db, but not committed yet
         while (flag.isFlagValue()) {
-            TimeUnit.MILLISECONDS.sleep(100);
+            TimeUnit.MILLISECONDS.sleep(50);
         }
-        String group = isolationService.readStudentGroupWithReadUncommittedLevel(studentId);
+        String group = isolationService.checkDirtyRead(studentId);
         // check that transaction read uncommitted value
         assertAll(
                 () -> assertEquals(newGroupName, group, "Group should be equal as dirty read is possible"),
@@ -96,8 +74,7 @@ class ReadUncommittedTest {
     }
 
     @Test
-    void testDirtyReadOfDeletedRow() throws InterruptedException {
-
+    void checkDirtyReadWhenUncommittedTrxDeletedRow() throws InterruptedException {
         // initialise flag object
         var flag = new Flag(true);
 
@@ -108,9 +85,9 @@ class ReadUncommittedTest {
         CompletableFuture<Void> changeGroupFuture = CompletableFuture.runAsync(() -> studentService.deleteStudent(studentId, flag, true));
         // wait until changes are flushed to db, but not committed yet
         while (flag.isFlagValue()) {
-            TimeUnit.MILLISECONDS.sleep(100);
+            TimeUnit.MILLISECONDS.sleep(50);
         }
-        Long count = isolationService.readStudentCountWhenRowDeleted();
+        Long count = isolationService.checkDirtyReadWhenUncommittedTrxDeletedRow();
         // check that transaction read uncommitted value
         assertEquals(1, count, "should be 1 student");
 
@@ -122,4 +99,13 @@ class ReadUncommittedTest {
         assertEquals(2, studentRepository.count(), "Should be 2 students as transaction rollbacks");
     }
 
+    @Test
+    void checkNonRepeatableRead() throws InterruptedException, ExecutionException {
+        super.checkNonRepeatableReadPossible(isolationService);
+    }
+
+    @Test
+    void checkPhantomRead() throws InterruptedException, ExecutionException {
+        super.checkPhantomReadPossible(isolationService);
+    }
 }

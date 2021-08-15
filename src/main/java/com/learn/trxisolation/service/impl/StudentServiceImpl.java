@@ -23,15 +23,6 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional
-    public StudentModel addStudent(StudentModel studentModel, Flag flag, boolean throwException) {
-        log.info("add new student {}", studentModel);
-        var student = studentRepository.save(studentModel);
-        flushAndWait(flag, throwException);
-        return student;
-    }
-
-    @Override
-    @Transactional
     public void deleteStudent(Long id, Flag flag, boolean throwException) {
         log.info("Delete student with id {}", id);
         studentRepository.deleteById(id);
